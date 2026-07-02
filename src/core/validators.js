@@ -25,7 +25,9 @@ export function validateContract(input, existingContracts = []) {
 
 export function validateVehicle(input, existingVehicles = []) {
   const errors = [];
-  requireText(input.code, "Código do veículo", errors);
+  requireText(input.code, "Prefixo", errors);
+  // Nenhum prefixo pode rodar sem placa.
+  requireText(input.plate, "Placa", errors);
   requireText(input.description, "Descrição", errors);
   requireText(input.contractId, "Contrato", errors);
   requirePositive(input.plannedKm, "KM planejado", errors);

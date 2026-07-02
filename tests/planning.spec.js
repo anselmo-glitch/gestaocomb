@@ -3,6 +3,7 @@ import { effectiveMonthState } from "../src/core/calculations.js";
 import {
   classifyDeviation,
   contractFleet,
+  contractsPrevReal,
   detectDeviations,
   monthlyEvolution,
   prevRealPanel
@@ -129,6 +130,33 @@ describe("contractFleet e detectDeviations", () => {
 
   it("sem desvios quando realizado = previsto", () => {
     expect(detectDeviations(baseState(), "2026-06")).toHaveLength(0);
+  });
+});
+
+describe("contractsPrevReal", () => {
+  it("lista todos os contratos com diferença em R$ e % e linha de total", () => {
+    const state = baseState();
+    state.contracts.push({ id: "c2", code: "C2", name: "Contrato 2", branchId: "b1", plannedDieselPrice: 5, fixedCostMonthly: 0, active: true });
+    const table = contractsPrevReal(state, "2026-06");
+    expect(table.rows).toHaveLength(2);
+    const c1 = table.rows.find((row) => row.contract.id === "c1");
+    expect(c1.previsto).toBe(2500); // 500 L × R$ 5
+    expect(c1.realizado).toBe(2500);
+    expect(c1.diff).toBe(0);
+    expect(c1.pct).toBe(0);
+    expect(c1.status).toBe("ok");
+    expect(table.total.previsto).toBe(2500); // c2 não tem veículos
+    expect(table.total.realizado).toBe(2500);
+    expect(table.total.status).toBe("ok");
+  });
+
+  it("classifica e ordena por previsto decrescente", () => {
+    const state = baseState();
+    state.fuelings.push({ id: "a9", date: "2026-06-25T08:00", branchId: "b1", tankId: "t1", vehicleId: "v1", liters: 100 });
+    const table = contractsPrevReal(state, "2026-06");
+    expect(table.rows[0].pct).toBe(20);
+    expect(table.rows[0].status).toBe("critico");
+    expect(table.total.diff).toBe(500); // 100 L × R$ 5
   });
 });
 

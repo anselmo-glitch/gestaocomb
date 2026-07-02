@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, toRaw } from "vue";
 import { integer, money, monthLabel, number } from "../core/format.js";
-import { monthlyEvolution, prevRealPanel } from "../core/planning.js";
+import { contractsPrevReal, monthlyEvolution, prevRealPanel } from "../core/planning.js";
 import { buildAlerts, monthConsumption, monthLosses, monthPurchases, tankStock, totalStock } from "../core/stock.js";
 import { useAppStore } from "../stores/appStore.js";
 import AppIcon from "../components/AppIcon.vue";
@@ -9,6 +9,7 @@ import KpiCard from "../components/KpiCard.vue";
 import LineChart from "../components/LineChart.vue";
 import MonthBranchFilter from "../components/MonthBranchFilter.vue";
 import PrevRealPanel from "../components/PrevRealPanel.vue";
+import StatusBadge from "../components/StatusBadge.vue";
 
 const store = useAppStore();
 const scopeType = ref("company");
@@ -59,6 +60,8 @@ const scope = computed(() => {
 });
 const panelRows = computed(() => prevRealPanel(raw.value, month.value, scope.value));
 const evolution = computed(() => monthlyEvolution(raw.value, month.value, scope.value));
+const contractsTable = computed(() => contractsPrevReal(raw.value, month.value));
+const canViewPlanned = computed(() => store.userCan("canViewPlanned"));
 
 const scopeOptions = computed(() => {
   if (scopeType.value === "branch") return store.state.branches.map((row) => ({ id: row.id, label: row.name }));
@@ -142,6 +145,62 @@ const chartSeries = computed(() => {
       </div>
     </div>
     <PrevRealPanel :rows="panelRows" />
+  </section>
+
+  <section class="panel">
+    <div class="panel-title">
+      <div>
+        <h2>Contratos — Previsto × Realizado</h2>
+        <p>Todos os contratos do mês, com diferença em reais e em percentual.</p>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Contrato</th>
+            <th>Filial</th>
+            <th v-if="canViewPlanned" class="num">Previsto (R$)</th>
+            <th class="num">Realizado (R$)</th>
+            <th v-if="canViewPlanned" class="num">Diferença (R$)</th>
+            <th v-if="canViewPlanned" class="num">Diferença (%)</th>
+            <th v-if="canViewPlanned">Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="!contractsTable.rows.length">
+            <td colspan="8" class="help">Nenhum contrato cadastrado.</td>
+          </tr>
+          <tr v-for="row in contractsTable.rows" :key="row.contract.id">
+            <td><strong>{{ row.contract.code }}</strong><br /><span class="help">{{ row.contract.name }}</span></td>
+            <td>{{ store.getBranch(row.contract.branchId)?.name }}</td>
+            <td v-if="canViewPlanned" class="num">{{ money(row.previsto) }}</td>
+            <td class="num">{{ money(row.realizado) }}</td>
+            <td v-if="canViewPlanned" class="num" :class="{ 'kpi-bad': row.status === 'critico', 'kpi-warn': row.status === 'atencao', 'kpi-good': row.diff < 0 }">
+              {{ row.diff > 0 ? "+" : "" }}{{ money(row.diff) }}
+            </td>
+            <td v-if="canViewPlanned" class="num">{{ row.pct > 0 ? "+" : "" }}{{ number(row.pct, 1) }}%</td>
+            <td v-if="canViewPlanned"><StatusBadge :status="row.status" :label="row.label" /></td>
+            <td><button class="btn ghost" @click="$router.push(`/contracts/${row.contract.id}`)">Abrir</button></td>
+          </tr>
+        </tbody>
+        <tfoot v-if="contractsTable.rows.length">
+          <tr class="total-row">
+            <td><strong>Total</strong></td>
+            <td></td>
+            <td v-if="canViewPlanned" class="num"><strong>{{ money(contractsTable.total.previsto) }}</strong></td>
+            <td class="num"><strong>{{ money(contractsTable.total.realizado) }}</strong></td>
+            <td v-if="canViewPlanned" class="num" :class="{ 'kpi-bad': contractsTable.total.status === 'critico', 'kpi-warn': contractsTable.total.status === 'atencao', 'kpi-good': contractsTable.total.diff < 0 }">
+              <strong>{{ contractsTable.total.diff > 0 ? "+" : "" }}{{ money(contractsTable.total.diff) }}</strong>
+            </td>
+            <td v-if="canViewPlanned" class="num"><strong>{{ contractsTable.total.pct > 0 ? "+" : "" }}{{ number(contractsTable.total.pct, 1) }}%</strong></td>
+            <td v-if="canViewPlanned"><StatusBadge :status="contractsTable.total.status" :label="contractsTable.total.label" /></td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
   </section>
 
   <div class="grid two">

@@ -17,15 +17,19 @@ export const useAppStore = defineStore("app", () => {
     return can(currentUser.value?.role, action);
   }
 
+  // Importante: persist/saveOnly NÃO substituem as coleções do estado —
+  // substituí-las por clones (Object.assign(state, saveState(...))) órfã
+  // referências capturadas pelas views antes do persist e silenciosamente
+  // descarta mutações feitas depois. Só o meta (updatedAt) é atualizado.
   function persist(action, detail) {
     const user = currentUser.value;
     state.auditLog = (state.auditLog || []).slice(0, MAX_AUDIT_ENTRIES - 1);
     state.auditLog.unshift({ id: uid("audit"), at: new Date().toISOString(), userId: user?.id, action, detail });
-    Object.assign(state, saveState(toRaw(state)));
+    state.meta = saveState(toRaw(state)).meta;
   }
 
   function saveOnly() {
-    Object.assign(state, saveState(toRaw(state)));
+    state.meta = saveState(toRaw(state)).meta;
   }
 
   function resetAll() {

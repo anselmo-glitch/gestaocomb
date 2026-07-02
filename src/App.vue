@@ -1,12 +1,23 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useRoute } from "vue-router";
 import { NAV_GROUPS, ROLE_LABEL, TABS } from "./core/constants.js";
 import { useAppStore } from "./stores/appStore.js";
 import AppIcon from "./components/AppIcon.vue";
 
+const THEME_KEY = "frota-ro-theme";
+
 const store = useAppStore();
 const route = useRoute();
+
+const theme = ref(localStorage.getItem(THEME_KEY) || "dark");
+document.documentElement.dataset.theme = theme.value;
+
+function toggleTheme() {
+  theme.value = theme.value === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = theme.value;
+  localStorage.setItem(THEME_KEY, theme.value);
+}
 
 const activeLabel = computed(() => {
   if (route.name === "contractDetail") return "Dashboard do contrato";
@@ -55,9 +66,19 @@ function isActive(tabId) {
           <h1>{{ activeLabel }}</h1>
           <p>Base corporativa única em modo local para validação. Para produção, usar Supabase com RLS.</p>
         </div>
-        <div class="user-pill">
-          <strong>{{ user?.name || "Usuário" }}</strong>
-          <span>{{ ROLE_LABEL[user?.role] || user?.role }} · {{ user?.active ? "ativo" : "inativo" }}</span>
+        <div class="topbar-right">
+          <button
+            class="btn ghost"
+            :aria-label="theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'"
+            @click="toggleTheme"
+          >
+            <AppIcon :name="theme === 'dark' ? 'sun' : 'moon'" :size="16" />
+            {{ theme === "dark" ? "Modo claro" : "Modo escuro" }}
+          </button>
+          <div class="user-pill">
+            <strong>{{ user?.name || "Usuário" }}</strong>
+            <span>{{ ROLE_LABEL[user?.role] || user?.role }} · {{ user?.active ? "ativo" : "inativo" }}</span>
+          </div>
         </div>
       </div>
       <router-view />

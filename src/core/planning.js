@@ -186,6 +186,43 @@ export function detectDeviations(state, month) {
   return deviations.sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct));
 }
 
+// Tabela de contratos do dashboard: previsto × realizado × diferença (R$ e %),
+// com linha de total — formato da planilha de referência do gestor.
+export function contractsPrevReal(state, month) {
+  const settings = deviationSettings(state);
+  const result = calculateMonth(state, month);
+  const rows = result.contracts
+    .map((row) => {
+      const previsto = toNumber(row.planned.total);
+      const realizado = toNumber(row.realized.total);
+      const diff = round(realizado - previsto, 2);
+      const pct = pctOf(previsto, realizado);
+      return {
+        contract: row.contract,
+        previsto,
+        realizado,
+        diff,
+        pct,
+        ...classifyDeviation(pct, settings)
+      };
+    })
+    .sort((a, b) => b.previsto - a.previsto);
+
+  const totalPrevisto = round(rows.reduce((sum, row) => sum + row.previsto, 0), 2);
+  const totalRealizado = round(rows.reduce((sum, row) => sum + row.realizado, 0), 2);
+  const totalPct = pctOf(totalPrevisto, totalRealizado);
+  return {
+    rows,
+    total: {
+      previsto: totalPrevisto,
+      realizado: totalRealizado,
+      diff: round(totalRealizado - totalPrevisto, 2),
+      pct: totalPct,
+      ...classifyDeviation(totalPct, settings)
+    }
+  };
+}
+
 // Rankings para o dashboard e relatórios.
 export function contractDeviationRanking(state, month, limit = 5) {
   const result = calculateMonth(state, month);

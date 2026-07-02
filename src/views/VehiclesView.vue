@@ -73,16 +73,35 @@ function submit() {
   const errors = validateVehicle(input, store.state.vehicles);
   if (errors.length) return toast(errors.join(" "));
   if (editingId.value) {
-    Object.assign(store.getVehicle(editingId.value), input);
+    const vehicle = store.getVehicle(editingId.value);
+    // Variação de placas por prefixo: troca de placa entra no histórico.
+    const previousPlate = vehicle.plate;
+    const plateChanged = Boolean(previousPlate) && previousPlate !== input.plate;
+    input.plateHistory = plateChanged
+      ? [...(vehicle.plateHistory || []), { plate: previousPlate, until: new Date().toISOString().slice(0, 10) }]
+      : vehicle.plateHistory || [];
+    Object.assign(vehicle, input);
     editingId.value = null;
-    store.persist("vehicle_updated", `Veículo ${input.code} atualizado.`);
-    toast("Veículo atualizado.");
+    store.persist(
+      plateChanged ? "vehicle_plate_changed" : "vehicle_updated",
+      plateChanged
+        ? `Prefixo ${input.code} atualizado — placa ${previousPlate} → ${input.plate} (histórico registrado).`
+        : `Prefixo ${input.code} atualizado.`
+    );
+    toast(plateChanged ? `Prefixo atualizado. Placa anterior ${previousPlate} guardada no histórico.` : "Prefixo atualizado.");
   } else {
+    input.plateHistory = [];
     store.state.vehicles.push(input);
-    store.persist("vehicle_created", `Veículo ${input.code} criado.`);
-    toast("Veículo salvo.");
+    store.persist("vehicle_created", `Prefixo ${input.code} criado.`);
+    toast("Prefixo salvo.");
   }
   Object.assign(form, emptyForm());
+}
+
+function plateHistoryLabel(vehicle) {
+  const history = vehicle.plateHistory || [];
+  if (!history.length) return "";
+  return history.map((item) => `${item.plate} (até ${item.until})`).join(", ");
 }
 
 function removeVehicle(vehicle) {
@@ -103,8 +122,8 @@ function removeVehicle(vehicle) {
   <section class="panel">
     <div class="panel-title">
       <div>
-        <h2>{{ editing ? `Editar veículo ${editing.code}` : "Cadastrar veículo/equipamento" }}</h2>
-        <p>As premissas abaixo alimentam o programado e o previsto ajustado.</p>
+        <h2>{{ editing ? `Editar prefixo ${editing.code}` : "Cadastrar prefixo (posto de trabalho)" }}</h2>
+        <p>Cada prefixo é um posto de trabalho vinculado a um contrato. Placa é obrigatória — nenhum prefixo roda sem placa; trocas ficam no histórico.</p>
       </div>
     </div>
     <form @submit.prevent="submit">
@@ -115,8 +134,8 @@ function removeVehicle(vehicle) {
             <option v-for="contract in store.state.contracts" :key="contract.id" :value="contract.id">{{ contract.code }}</option>
           </select>
         </div>
-        <div class="field"><label>Código do bem</label><input v-model="form.code" :disabled="!store.userCan('canWrite')" placeholder="Ex.: 15007" /></div>
-        <div class="field"><label>Placa</label><input v-model="form.plate" :disabled="!store.userCan('canWrite')" placeholder="Opcional" /></div>
+        <div class="field"><label>Prefixo *</label><input v-model="form.code" :disabled="!store.userCan('canWrite')" placeholder="Ex.: CARMO 318" /></div>
+        <div class="field"><label>Placa atual *</label><input v-model="form.plate" :disabled="!store.userCan('canWrite')" placeholder="Ex.: ROD0A00" /></div>
         <div class="field"><label>Descrição</label><input v-model="form.description" :disabled="!store.userCan('canWrite')" placeholder="Ex.: Cavalo mecânico" /></div>
         <div class="field"><label>Categoria</label><input v-model="form.category" :disabled="!store.userCan('canWrite')" placeholder="Cavalo, tanque, munck..." /></div>
         <div class="field"><label>KM planejado</label><input v-model="form.plannedKm" :disabled="!store.userCan('canWrite')" type="number" step="1" /></div>
@@ -141,14 +160,19 @@ function removeVehicle(vehicle) {
   </section>
 
   <section class="panel">
-    <div class="panel-title"><div><h2>Veículos cadastrados</h2><p>O KM realizado será lançado por veículo e não será redistribuído.</p></div></div>
+    <div class="panel-title"><div><h2>Prefixos cadastrados</h2><p>O KM realizado será lançado por prefixo e não será redistribuído.</p></div></div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Bem</th><th>Placa</th><th>Descrição</th><th>Contrato</th><th>KM plan.</th><th>Média</th><th>Bomba</th><th>CPK pneu</th><th>CPK manut.</th><th>Status</th><th>Ações</th></tr></thead>
+        <thead><tr><th>Prefixo</th><th>Placa</th><th>Descrição</th><th>Contrato</th><th>KM plan.</th><th>Média</th><th>Bomba</th><th>CPK pneu</th><th>CPK manut.</th><th>Status</th><th>Ações</th></tr></thead>
         <tbody>
           <tr v-for="vehicle in store.state.vehicles" :key="vehicle.id">
             <td><strong>{{ vehicle.code }}</strong></td>
-            <td>{{ vehicle.plate }}</td>
+            <td>
+              <span v-if="vehicle.plate">{{ vehicle.plate }}</span>
+              <span v-else class="badge bad">Sem placa</span>
+              <br v-if="plateHistoryLabel(vehicle)" />
+              <span v-if="plateHistoryLabel(vehicle)" class="help">Anteriores: {{ plateHistoryLabel(vehicle) }}</span>
+            </td>
             <td>{{ vehicle.description }}</td>
             <td>{{ store.getContract(vehicle.contractId)?.code }}</td>
             <td>{{ integer(vehicle.plannedKm) }}</td>

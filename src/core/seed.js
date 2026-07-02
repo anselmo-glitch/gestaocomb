@@ -118,6 +118,7 @@ export function createSeedState() {
         contractId: "contract_seacrest_es",
         code: "15007",
         plate: "ROD0A00",
+        plateHistory: [],
         description: "Cavalo mecânico 6x4",
         category: "Cavalo mecânico",
         plannedKm: 8000,
@@ -133,6 +134,7 @@ export function createSeedState() {
         contractId: "contract_seacrest_es",
         code: "25011",
         plate: "ROD0B00",
+        plateHistory: [],
         description: "Semirreboque tanque",
         category: "Implemento",
         plannedKm: 8000,
@@ -148,6 +150,7 @@ export function createSeedState() {
         contractId: "contract_pr_ba",
         code: "32015",
         plate: "ROD0C00",
+        plateHistory: [],
         description: "Caminhão tanque com bomba",
         category: "Tanque",
         plannedKm: 6200,
@@ -371,6 +374,10 @@ export const STATE_COLLECTIONS = [
 export function ensureStateShape(state) {
   for (const collection of STATE_COLLECTIONS) {
     if (!Array.isArray(state[collection])) state[collection] = [];
+  }
+  // Prefixo/placa: garante o histórico de placas em estados salvos por versões antigas.
+  for (const vehicle of state.vehicles) {
+    if (!Array.isArray(vehicle.plateHistory)) vehicle.plateHistory = [];
   }
   state.deviationSettings = { ...DEFAULT_DEVIATION_SETTINGS, ...(state.deviationSettings || {}) };
   state.meta = { ...(state.meta || {}), schemaVersion: 3 };

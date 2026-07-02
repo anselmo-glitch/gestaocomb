@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { validateBranchFuel, validateContract, validateVehicle } from "../src/core/validators.js";
 
 const validContract = { id: "c9", code: "NOVO", name: "Contrato novo", branchId: "b1", plannedDieselPrice: 5.3, fixedCostMonthly: 0 };
-const validVehicle = { id: "v9", code: "9001", description: "Caminhão", contractId: "c1", plannedKm: 1000, avgKmL: 2.5, tireCpk: 0.1, maintenanceCpk: 0.2 };
+const validVehicle = { id: "v9", code: "9001", plate: "ABC1D23", description: "Caminhão", contractId: "c1", plannedKm: 1000, avgKmL: 2.5, tireCpk: 0.1, maintenanceCpk: 0.2 };
 
 describe("validateContract", () => {
   it("passa sem erros quando válido", () => {
@@ -35,6 +35,11 @@ describe("validateVehicle", () => {
   it("rejeita veículo sem média km/l", () => {
     const errors = validateVehicle({ ...validVehicle, avgKmL: 0 }, []);
     expect(errors.length).toBeGreaterThan(0);
+  });
+
+  it("rejeita prefixo sem placa (nenhum prefixo roda sem placa)", () => {
+    const errors = validateVehicle({ ...validVehicle, plate: "" }, []);
+    expect(errors.some((error) => error.includes("Placa"))).toBe(true);
   });
 });
 

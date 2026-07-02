@@ -68,6 +68,10 @@ function submit() {
   };
   const errors = validateFueling(input);
   if (errors.length) return toast(errors.join(" "));
+  const vehicle = store.getVehicle(input.vehicleId);
+  if (!vehicle?.plate) {
+    return toast(`O prefixo ${vehicle?.code || ""} está sem placa — nenhum prefixo pode rodar sem placa. Cadastre a placa em Veículos.`);
+  }
   if (input.liters > selectedTankStock.value) {
     return toast(`Estoque insuficiente no tanque (${number(selectedTankStock.value, 0)} L disponíveis).`);
   }
@@ -119,9 +123,11 @@ function formatDateTime(value) {
           </select>
         </div>
         <div class="field">
-          <label for="a-vehicle">Veículo/equipamento *</label>
+          <label for="a-vehicle">Prefixo (veículo/equipamento) *</label>
           <select id="a-vehicle" v-model="form.vehicleId" :disabled="!canRegister">
-            <option v-for="row in store.state.vehicles" :key="row.id" :value="row.id">{{ row.code }} — {{ row.description }}</option>
+            <option v-for="row in store.state.vehicles" :key="row.id" :value="row.id">
+              {{ row.code }} — {{ row.plate || "SEM PLACA" }} — {{ row.description }}
+            </option>
           </select>
         </div>
         <div class="field">
@@ -174,7 +180,7 @@ function formatDateTime(value) {
             <td>{{ formatDateTime(row.date) }}</td>
             <td>{{ store.getBranch(row.branchId)?.name }}</td>
             <td>{{ store.getTank(row.tankId)?.code }}</td>
-            <td><strong>{{ store.getVehicle(row.vehicleId)?.code }}</strong></td>
+            <td><strong>{{ store.getVehicle(row.vehicleId)?.code }}</strong><br /><span class="help">{{ store.getVehicle(row.vehicleId)?.plate }}</span></td>
             <td>{{ store.getDriver(row.driverId)?.name || "—" }}</td>
             <td class="num">{{ number(row.liters, 0) }}</td>
             <td class="num">{{ row.odometer ? number(row.odometer, 0) : "—" }}</td>

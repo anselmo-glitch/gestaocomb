@@ -82,7 +82,7 @@ function saveMonthly() {
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Ativo</th><th>Bem</th><th>Contrato</th><th>Filial</th><th>KM planejado</th><th>KM realizado</th><th>Litros reais</th><th>Preço real</th><th>Observação</th></tr>
+          <tr><th>Ativo</th><th>Prefixo</th><th>Contrato</th><th>Filial</th><th>KM planejado</th><th>KM realizado</th><th>Litros reais</th><th>Preço real</th><th>Observação</th></tr>
         </thead>
         <tbody>
           <template v-for="vehicle in store.state.vehicles" :key="vehicle.id">

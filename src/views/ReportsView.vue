@@ -78,7 +78,7 @@ function exportCsv() {
     <div class="panel-title"><div><h2>Ranking por veículo</h2><p>KM, diesel, pneu e manutenção sempre partem do veículo lançado.</p></div></div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Bem</th><th>Contrato</th><th>KM</th><th>Litros</th><th>Origem diesel</th><th>Diesel</th><th>Pneu</th><th>Manutenção</th><th>Total</th><th>Desv. consumo</th><th>Desv. preço</th></tr></thead>
+        <thead><tr><th>Prefixo</th><th>Contrato</th><th>KM</th><th>Litros</th><th>Origem diesel</th><th>Diesel</th><th>Pneu</th><th>Manutenção</th><th>Total</th><th>Desv. consumo</th><th>Desv. preço</th></tr></thead>
         <tbody>
           <tr v-for="row in vehicleRows" :key="row.vehicle.id">
             <td><strong>{{ row.vehicle.code }}</strong><br><span class="help">{{ row.vehicle.description }}</span></td>
