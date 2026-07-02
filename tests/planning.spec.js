@@ -4,6 +4,7 @@ import {
   classifyDeviation,
   contractFleet,
   contractsPrevReal,
+  costTypeBreakdown,
   detectDeviations,
   monthlyEvolution,
   prevRealPanel
@@ -157,6 +158,39 @@ describe("contractsPrevReal", () => {
     expect(table.rows[0].pct).toBe(20);
     expect(table.rows[0].status).toBe("critico");
     expect(table.total.diff).toBe(500); // 100 L × R$ 5
+  });
+});
+
+describe("costTypeBreakdown", () => {
+  it("separa previsto ajustado × realizado por diesel, manutenção, pneu e fixos", () => {
+    const state = baseState();
+    state.vehicles[0].tireCpk = 0.1;
+    state.vehicles[0].maintenanceCpk = 0.2;
+    state.contracts[0].fixedCostMonthly = 1000;
+    const breakdown = costTypeBreakdown(state, "2026-06", { type: "company" });
+    const byKey = Object.fromEntries(breakdown.map((row) => [row.key, row]));
+
+    expect(byKey.diesel.previsto).toBe(2500); // 500 L × R$ 5 (previsto ajustado pelo KM realizado)
+    expect(byKey.diesel.realizado).toBe(2500);
+    expect(byKey.diesel.gain).toBe(0);
+
+    expect(byKey.tire.previsto).toBe(100); // 1000 km × 0,10
+    expect(byKey.tire.realizado).toBe(100);
+
+    expect(byKey.maintenance.previsto).toBe(200); // 1000 km × 0,20
+    expect(byKey.fixed.previsto).toBe(1000);
+    expect(byKey.fixed.realizado).toBe(1000); // custo fixo não varia com o KM
+    expect(byKey.fixed.gain).toBe(0);
+  });
+
+  it("gain negativo (excesso) quando realizado supera o previsto ajustado", () => {
+    const state = baseState();
+    state.fuelings.push({ id: "a9", date: "2026-06-25T08:00", branchId: "b1", tankId: "t1", vehicleId: "v1", liters: 100 });
+    const breakdown = costTypeBreakdown(state, "2026-06", { type: "company" });
+    const diesel = breakdown.find((row) => row.key === "diesel");
+    expect(diesel.realizado).toBe(3000);
+    expect(diesel.gain).toBe(-500); // 2500 previsto - 3000 realizado
+    expect(diesel.status).toBe("critico");
   });
 });
 

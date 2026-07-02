@@ -71,6 +71,31 @@ export function prevRealPanel(state, month, scope) {
   ];
 }
 
+const COST_TYPES = [
+  { key: "diesel", name: "Diesel", letter: "D" },
+  { key: "maintenance", name: "Manutenção", letter: "M" },
+  { key: "tire", name: "Pneu", letter: "P" },
+  { key: "fixed", name: "Fixos", letter: "F" }
+];
+
+// KPIs por tipo de custo (Diesel/Manutenção/Pneu/Fixos): previsto ajustado ×
+// realizado, com ganho (previsto - realizado, positivo = economia).
+export function costTypeBreakdown(state, month, scope) {
+  const settings = deviationSettings(state);
+  const { rows, vehicleRows, vehicleOnly } = scopeBlocks(state, month, scope);
+  const source = vehicleOnly ? vehicleRows : rows;
+
+  return COST_TYPES.map((type) => {
+    // "Previsto ajustado" = recalculado pelo KM realizado (row.adjusted), não o
+    // programado original — compara custo com o KM que de fato rodou.
+    const previsto = round(source.reduce((sum, row) => sum + toNumber(row.adjusted[type.key]), 0), 2);
+    const realizado = round(source.reduce((sum, row) => sum + toNumber(row.realized[type.key]), 0), 2);
+    const gain = round(previsto - realizado, 2);
+    const pct = pctOf(previsto, realizado);
+    return { ...type, previsto, realizado, gain, pct, ...classifyDeviation(pct, settings) };
+  });
+}
+
 // Frota do contrato: km/L previsto × realizado com classificação por veículo.
 export function contractFleet(state, month, contractId) {
   const settings = deviationSettings(state);

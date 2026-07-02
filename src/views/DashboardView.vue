@@ -1,10 +1,11 @@
 <script setup>
 import { computed, ref, toRaw } from "vue";
 import { integer, money, monthLabel, number } from "../core/format.js";
-import { contractsPrevReal, monthlyEvolution, prevRealPanel } from "../core/planning.js";
+import { contractsPrevReal, costTypeBreakdown, monthlyEvolution, prevRealPanel } from "../core/planning.js";
 import { buildAlerts, monthConsumption, monthLosses, monthPurchases, tankStock, totalStock } from "../core/stock.js";
 import { useAppStore } from "../stores/appStore.js";
 import AppIcon from "../components/AppIcon.vue";
+import CostBreakdownCard from "../components/CostBreakdownCard.vue";
 import KpiCard from "../components/KpiCard.vue";
 import LineChart from "../components/LineChart.vue";
 import MonthBranchFilter from "../components/MonthBranchFilter.vue";
@@ -62,6 +63,7 @@ const panelRows = computed(() => prevRealPanel(raw.value, month.value, scope.val
 const evolution = computed(() => monthlyEvolution(raw.value, month.value, scope.value));
 const contractsTable = computed(() => contractsPrevReal(raw.value, month.value));
 const canViewPlanned = computed(() => store.userCan("canViewPlanned"));
+const costBreakdown = computed(() => costTypeBreakdown(raw.value, month.value, scope.value));
 
 const scopeOptions = computed(() => {
   if (scopeType.value === "branch") return store.state.branches.map((row) => ({ id: row.id, label: row.name }));
@@ -81,12 +83,12 @@ const chartSeries = computed(() => {
     {
       name: isLiters ? "Previsto (L)" : "Previsto (R$)",
       values: isLiters ? evolution.value.prevLiters : evolution.value.prevCost,
-      color: "#8b96a8"
+      color: "#94a3b8"
     },
     {
       name: isLiters ? "Realizado (L)" : "Realizado (R$)",
       values: isLiters ? evolution.value.realLiters : evolution.value.realCost,
-      color: "#3b82f6"
+      color: "#6d28d9"
     }
   ];
 });
@@ -94,6 +96,18 @@ const chartSeries = computed(() => {
 
 <template>
   <MonthBranchFilter />
+
+  <section class="panel">
+    <div class="panel-title">
+      <div>
+        <h2>KPIs por tipo de custo</h2>
+        <p>Previsto ajustado × realizado de diesel, manutenção, pneu e custos fixos.</p>
+      </div>
+    </div>
+    <div class="grid cards">
+      <CostBreakdownCard v-for="row in costBreakdown" :key="row.key" :row="row" />
+    </div>
+  </section>
 
   <div class="grid cards">
     <KpiCard

@@ -39,8 +39,8 @@ const summary = computed(() => {
 const chartSeries = computed(() => {
   const isLiters = evolutionMetric.value === "liters";
   return [
-    { name: isLiters ? "Previsto (L)" : "Previsto (R$)", values: isLiters ? evolution.value.prevLiters : evolution.value.prevCost, color: "#8b96a8" },
-    { name: isLiters ? "Realizado (L)" : "Realizado (R$)", values: isLiters ? evolution.value.realLiters : evolution.value.realCost, color: "#3b82f6" }
+    { name: isLiters ? "Previsto (L)" : "Previsto (R$)", values: isLiters ? evolution.value.prevLiters : evolution.value.prevCost, color: "#94a3b8" },
+    { name: isLiters ? "Realizado (L)" : "Realizado (R$)", values: isLiters ? evolution.value.realLiters : evolution.value.realCost, color: "#6d28d9" }
   ];
 });
 </script>
