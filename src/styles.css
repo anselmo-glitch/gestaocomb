@@ -905,6 +905,55 @@ table input[type="checkbox"] {
   font-size: 13px;
 }
 
+/* ---------- Modal ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 17, 26, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1100;
+  animation: toast-in 0.18s ease-out;
+}
+
+.modal {
+  width: 100%;
+  max-width: 460px;
+  margin: 0;
+}
+
+.cost-focus-options {
+  display: grid;
+  gap: 8px;
+}
+
+.cost-focus-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-2);
+  color: var(--text);
+  font-weight: 600;
+  text-align: left;
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+
+.cost-focus-option:hover {
+  border-color: var(--primary);
+}
+
+.cost-focus-option.active {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
 /* ---------- Toast ---------- */
 
 .toast {

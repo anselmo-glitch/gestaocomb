@@ -159,6 +159,21 @@ describe("contractsPrevReal", () => {
     expect(table.rows[0].status).toBe("critico");
     expect(table.total.diff).toBe(500); // 100 L × R$ 5
   });
+
+  it("isola um único tipo de custo quando costFocus é informado", () => {
+    const state = baseState();
+    state.vehicles[0].tireCpk = 0.1;
+    state.vehicles[0].maintenanceCpk = 0.2;
+    state.contracts[0].fixedCostMonthly = 1000;
+    const dieselTable = contractsPrevReal(state, "2026-06", "diesel");
+    expect(dieselTable.rows[0].previsto).toBe(2500);
+    expect(dieselTable.total.previsto).toBe(2500);
+    const tireTable = contractsPrevReal(state, "2026-06", "tire");
+    expect(tireTable.rows[0].previsto).toBe(100); // 1000 km × 0,10
+    const fixedTable = contractsPrevReal(state, "2026-06", "fixed");
+    expect(fixedTable.rows[0].previsto).toBe(1000);
+    expect(fixedTable.rows[0].realizado).toBe(1000);
+  });
 });
 
 describe("costTypeBreakdown", () => {

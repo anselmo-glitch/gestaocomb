@@ -1,11 +1,13 @@
 <script setup>
-import { computed, ref, toRaw } from "vue";
+import { computed, onMounted, ref, toRaw } from "vue";
+import { COST_FOCUS_ASKED_KEY, COST_FOCUS_OPTIONS } from "../core/constants.js";
 import { integer, money, monthLabel, number } from "../core/format.js";
 import { contractsPrevReal, costTypeBreakdown, monthlyEvolution, prevRealPanel } from "../core/planning.js";
 import { buildAlerts, monthConsumption, monthLosses, monthPurchases, tankStock, totalStock } from "../core/stock.js";
 import { useAppStore } from "../stores/appStore.js";
 import AppIcon from "../components/AppIcon.vue";
 import CostBreakdownCard from "../components/CostBreakdownCard.vue";
+import CostFocusModal from "../components/CostFocusModal.vue";
 import KpiCard from "../components/KpiCard.vue";
 import LineChart from "../components/LineChart.vue";
 import MonthBranchFilter from "../components/MonthBranchFilter.vue";
@@ -16,6 +18,32 @@ const store = useAppStore();
 const scopeType = ref("company");
 const scopeId = ref("");
 const evolutionMetric = ref("liters");
+
+// Pergunta o foco de custo uma vez por sessão do navegador ao entrar no dashboard.
+const showCostModal = ref(false);
+onMounted(() => {
+  if (!sessionStorage.getItem(COST_FOCUS_ASKED_KEY)) showCostModal.value = true;
+});
+
+function confirmCostFocus(value) {
+  store.setCostFocus(value);
+  sessionStorage.setItem(COST_FOCUS_ASKED_KEY, "true");
+  showCostModal.value = false;
+}
+
+function closeCostModal() {
+  sessionStorage.setItem(COST_FOCUS_ASKED_KEY, "true");
+  showCostModal.value = false;
+}
+
+const COST_SHORT_LABEL = { all: "Total", diesel: "Diesel", tire: "Pneu", maintenance: "Manutenção" };
+const costFocusLabel = computed(
+  () => COST_FOCUS_OPTIONS.find((option) => option.value === store.costFocus)?.label || "Todos os custos"
+);
+const visibleCostBreakdown = computed(() =>
+  costBreakdown.value.filter((row) => store.costFocus === "all" || row.key === store.costFocus)
+);
+const contractsColumnLabel = computed(() => `${COST_SHORT_LABEL[store.costFocus] || "Total"} (R$)`);
 
 const raw = computed(() => toRaw(store.state));
 const month = computed(() => store.selectedMonth);
@@ -61,7 +89,7 @@ const scope = computed(() => {
 });
 const panelRows = computed(() => prevRealPanel(raw.value, month.value, scope.value));
 const evolution = computed(() => monthlyEvolution(raw.value, month.value, scope.value));
-const contractsTable = computed(() => contractsPrevReal(raw.value, month.value));
+const contractsTable = computed(() => contractsPrevReal(raw.value, month.value, store.costFocus));
 const canViewPlanned = computed(() => store.userCan("canViewPlanned"));
 const costBreakdown = computed(() => costTypeBreakdown(raw.value, month.value, scope.value));
 
@@ -95,17 +123,20 @@ const chartSeries = computed(() => {
 </script>
 
 <template>
+  <CostFocusModal v-if="showCostModal" :model-value="store.costFocus" @confirm="confirmCostFocus" @close="closeCostModal" />
+
   <MonthBranchFilter />
 
   <section class="panel">
     <div class="panel-title">
       <div>
         <h2>KPIs por tipo de custo</h2>
-        <p>Previsto ajustado × realizado de diesel, manutenção, pneu e custos fixos.</p>
+        <p>Exibindo: {{ costFocusLabel }}. Previsto ajustado × realizado.</p>
       </div>
+      <button class="btn ghost" @click="showCostModal = true">Alterar filtro de custo</button>
     </div>
     <div class="grid cards">
-      <CostBreakdownCard v-for="row in costBreakdown" :key="row.key" :row="row" />
+      <CostBreakdownCard v-for="row in visibleCostBreakdown" :key="row.key" :row="row" />
     </div>
   </section>
 
@@ -165,7 +196,7 @@ const chartSeries = computed(() => {
     <div class="panel-title">
       <div>
         <h2>Contratos — Previsto × Realizado</h2>
-        <p>Todos os contratos do mês, com diferença em reais e em percentual.</p>
+        <p>Todos os contratos do mês · foco: {{ costFocusLabel }}.</p>
       </div>
     </div>
     <div class="table-wrap">
@@ -174,8 +205,8 @@ const chartSeries = computed(() => {
           <tr>
             <th>Contrato</th>
             <th>Filial</th>
-            <th v-if="canViewPlanned" class="num">Previsto (R$)</th>
-            <th class="num">Realizado (R$)</th>
+            <th v-if="canViewPlanned" class="num">Previsto {{ contractsColumnLabel }}</th>
+            <th class="num">Realizado {{ contractsColumnLabel }}</th>
             <th v-if="canViewPlanned" class="num">Diferença (R$)</th>
             <th v-if="canViewPlanned" class="num">Diferença (%)</th>
             <th v-if="canViewPlanned">Status</th>

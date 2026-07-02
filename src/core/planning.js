@@ -213,13 +213,15 @@ export function detectDeviations(state, month) {
 
 // Tabela de contratos do dashboard: previsto × realizado × diferença (R$ e %),
 // com linha de total — formato da planilha de referência do gestor.
-export function contractsPrevReal(state, month) {
+// costFocus: "all" (total) ou "diesel"/"tire"/"maintenance"/"fixed" para isolar um tipo de custo.
+export function contractsPrevReal(state, month, costFocus = "all") {
   const settings = deviationSettings(state);
   const result = calculateMonth(state, month);
+  const pick = (block) => (costFocus === "all" ? toNumber(block.total) : toNumber(block[costFocus]));
   const rows = result.contracts
     .map((row) => {
-      const previsto = toNumber(row.planned.total);
-      const realizado = toNumber(row.realized.total);
+      const previsto = pick(row.planned);
+      const realizado = pick(row.realized);
       const diff = round(realizado - previsto, 2);
       const pct = pctOf(previsto, realizado);
       return {

@@ -73,6 +73,17 @@ export const ACTION_PLAN_STATUS_LABEL = {
   [ACTION_PLAN_STATUS.CONCLUIDO]: "Concluído"
 };
 
+export const COST_FOCUS_KEY = "frota-ro-cost-focus";
+export const COST_FOCUS_ASKED_KEY = "frota-ro-cost-focus-asked";
+
+// Filtro de qual custo visualizar no dashboard: todos ou só um tipo.
+export const COST_FOCUS_OPTIONS = [
+  { value: "all", label: "Todos os custos", letter: "T" },
+  { value: "diesel", label: "Somente Diesel", letter: "D" },
+  { value: "tire", label: "Somente Pneu", letter: "P" },
+  { value: "maintenance", label: "Somente Manutenção", letter: "M" }
+];
+
 // Limites padrão (parametrizáveis em state.deviationSettings).
 export const DEFAULT_DEVIATION_SETTINGS = {
   greenMaxPct: 3,

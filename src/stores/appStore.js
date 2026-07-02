@@ -1,5 +1,6 @@
 import { computed, reactive, ref, toRaw } from "vue";
 import { defineStore } from "pinia";
+import { COST_FOCUS_KEY } from "../core/constants.js";
 import { currentMonth, uid } from "../core/format.js";
 import { can } from "../core/permissions.js";
 import { importState, loadState, resetState, saveState } from "../services/localStore.js";
@@ -10,6 +11,12 @@ export const useAppStore = defineStore("app", () => {
   const state = reactive(loadState());
   const selectedMonth = ref(state.monthlyEntries[0]?.month || currentMonth());
   const selectedBranch = ref("all");
+  const costFocus = ref(localStorage.getItem(COST_FOCUS_KEY) || "all");
+
+  function setCostFocus(value) {
+    costFocus.value = value;
+    localStorage.setItem(COST_FOCUS_KEY, value);
+  }
 
   const currentUser = computed(() => state.users.find((user) => user.id === state.currentUserId) || state.users[0]);
 
@@ -84,6 +91,8 @@ export const useAppStore = defineStore("app", () => {
     state,
     selectedMonth,
     selectedBranch,
+    costFocus,
+    setCostFocus,
     currentUser,
     userCan,
     persist,
