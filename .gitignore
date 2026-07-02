@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+.env.local
+*.local
+
+# Pacotes de skills baixados (instalados em ~/.claude, não fazem parte do app)
+ui-ux-pro-max-skill-main/
+awesome-claude-code-main/
