@@ -30,10 +30,10 @@ function formatDiff(row) {
       <thead>
         <tr>
           <th>Indicador</th>
-          <th v-if="canViewPlanned">Previsto</th>
-          <th>Realizado</th>
-          <th v-if="canViewPlanned">Diferença</th>
-          <th v-if="canViewPlanned">%</th>
+          <th v-if="canViewPlanned" class="num">Previsto</th>
+          <th class="num">Realizado</th>
+          <th v-if="canViewPlanned" class="num">Diferença</th>
+          <th v-if="canViewPlanned" class="num">%</th>
           <th v-if="canViewPlanned">Status</th>
         </tr>
       </thead>

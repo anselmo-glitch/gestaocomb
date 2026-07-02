@@ -105,6 +105,27 @@ function changeScopeType(type) {
   scopeId.value = type === "company" ? "" : scopeOptions.value[0]?.id || "";
 }
 
+// Busca por veículo: encontra por prefixo, placa ou descrição e foca o
+// painel Previsto × Realizado no veículo encontrado.
+const vehicleSearch = ref("");
+const searchResults = computed(() => {
+  const query = vehicleSearch.value.trim().toLowerCase();
+  if (query.length < 2) return [];
+  return store.state.vehicles
+    .filter((vehicle) =>
+      [vehicle.code, vehicle.plate, vehicle.description]
+        .some((field) => String(field || "").toLowerCase().includes(query))
+    )
+    .slice(0, 8);
+});
+
+function focusVehicle(vehicle) {
+  scopeType.value = "vehicle";
+  scopeId.value = vehicle.id;
+  vehicleSearch.value = "";
+  document.querySelector("#prevreal-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 const chartSeries = computed(() => {
   const isLiters = evolutionMetric.value === "liters";
   return [
@@ -126,6 +147,29 @@ const chartSeries = computed(() => {
   <CostFocusModal v-if="showCostModal" :model-value="store.costFocus" @confirm="confirmCostFocus" @close="closeCostModal" />
 
   <MonthBranchFilter />
+
+  <section class="panel vehicle-search">
+    <div class="field">
+      <label for="vehicle-search">Buscar veículo (prefixo, placa ou descrição)</label>
+      <input
+        id="vehicle-search"
+        v-model="vehicleSearch"
+        type="search"
+        placeholder="Ex.: 33090201, ROD0A00, cavalo mecânico..."
+        autocomplete="off"
+      />
+    </div>
+    <div v-if="searchResults.length" class="search-results" role="listbox" aria-label="Resultados da busca">
+      <button v-for="vehicle in searchResults" :key="vehicle.id" type="button" class="search-result" role="option" @click="focusVehicle(vehicle)">
+        <strong>{{ vehicle.code }}</strong>
+        <span class="badge" :class="vehicle.plate ? '' : 'bad'">{{ vehicle.plate || "Sem placa" }}</span>
+        <span class="help">{{ vehicle.description }} · {{ store.getContract(vehicle.contractId)?.code }}</span>
+      </button>
+    </div>
+    <p v-else-if="vehicleSearch.trim().length >= 2" class="help" style="margin: 8px 0 0;">
+      Nenhum veículo encontrado para "{{ vehicleSearch }}".
+    </p>
+  </section>
 
   <section class="panel">
     <div class="panel-title">
@@ -168,10 +212,10 @@ const chartSeries = computed(() => {
     />
   </div>
 
-  <section class="panel" style="margin-top: 16px;">
+  <section id="prevreal-panel" class="panel" style="margin-top: 16px;">
     <div class="panel-title">
       <div>
-        <h2>Previsto × Realizado</h2>
+        <h2>Previsto × Realizado · {{ monthLabel(month) }}</h2>
         <p>Painel principal do módulo — escolha o nível de análise.</p>
       </div>
       <div class="subtabs" style="margin-bottom: 0;">
@@ -195,8 +239,8 @@ const chartSeries = computed(() => {
   <section class="panel">
     <div class="panel-title">
       <div>
-        <h2>Contratos — Previsto × Realizado</h2>
-        <p>Todos os contratos do mês · foco: {{ costFocusLabel }}.</p>
+        <h2>Contratos — Previsto × Realizado · {{ monthLabel(month) }}</h2>
+        <p>Todos os contratos da competência {{ month }} · foco: {{ costFocusLabel }}.</p>
       </div>
     </div>
     <div class="table-wrap">
